@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор выбора подвоя винограда</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        h1 { color: #27ae60; text-align: center; border-bottom: 3px solid #27ae60; padding-bottom: 15px; font-size: 24px; }
+        .form-group { margin: 20px 0; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #2c3e50; }
+        select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        select:disabled { background: #f5f5f5; color: #999; cursor: not-allowed; }
+        .btn { background: #27ae60; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 15px; transition: background 0.3s; }
+        .btn:hover { background: #229954; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .results { margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; display: none; }
+        .result-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #27ae60; page-break-inside: avoid; break-inside: avoid; }
+        .result-item h3 { margin: 0 0 8px 0; color: #27ae60; }
+        .warning { background: #fff3cd; border-left-color: #ffc107; page-break-inside: avoid; break-inside: avoid; }
+        .soil-note { font-size: 12px; color: #666; margin-top: 5px; font-style: italic; }
+        .nav-link { display: inline-block; background: #3498db; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin: 15px 0; transition: background 0.3s; font-size: 14px; }
+        .nav-link:hover { background: #2980b9; }
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .form-group, .btn, .nav-link { display: none !important; }
+            .results { display: block !important; background: white; padding: 0; margin: 0; }
+            .result-item { border: 1px solid #ddd; margin: 10px 0; page-break-inside: avoid; break-inside: avoid; }
+            h1 { font-size: 20pt; text-align: center; }
+            h2 { font-size: 16pt; page-break-after: avoid; }
+            h3 { font-size: 14pt; page-break-after: avoid; }
+            p, li { font-size: 11pt; line-height: 1.5; }
+            .result-item, .warning { page-break-inside: avoid; break-inside: avoid; }
+            .results { page-break-before: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Обратная ссылка на исследование -->
+        <div style="text-align: center; margin-bottom: 15px;">
+            <a href="index.html" class="nav-link">← Вернуться к исследованию</a>
+        </div>
+        
+        <h1>🍇 Калькулятор выбора подвоя</h1>
+        <div class="form-group">
+            <label for="soilType">🌱 Тип почвы:</label>
+            <select id="soilType" onchange="toggleClimate()">
+                <option value="">Выберите тип почвы...</option>
+                <option value="limestone_15_20">Известковая 15-20%</option>
+                <option value="arid">Засушливая</option>
+                <option value="limestone_30_40">Сильно известковая 30-40%</option>
+                <option value="sandy">Песчаная</option>
+                <option value="saline">Засолённая</option>
+                <option value="stony_arid">Каменистая засушливая</option>
+                <option value="chernozem">Чернозём</option>
+            </select>
+            <div class="soil-note" id="soilNote"></div>
+        </div>
+        <div class="form-group">
+            <label for="climate">🌤️ Климат:</label>
+            <select id="climate">
+                <option value="">Выберите климат...</option>
+                <option value="moderate_dry">Умеренно засушливый</option>
+                <option value="cold" id="coldOption">Холодный (северные районы)</option>
+            </select>
+        </div>
+        <button onclick="calculateRootstock()" id="calcBtn" class="btn">🔍 Рассчитать</button>
+        <div id="results" class="results"></div>
+    </div>
+    <script>
+        const southernSoils = ['limestone_15_20', 'arid', 'limestone_30_40', 'saline', 'stony_arid'];
+        function toggleClimate() {
+            const soilType = document.getElementById('soilType').value;
+            const coldOption = document.getElementById('coldOption');
+            const climate = document.getElementById('climate');
+            const soilNote = document.getElementById('soilNote');
+            const calcBtn = document.getElementById('calcBtn');
+            if (southernSoils.includes(soilType)) {
+                coldOption.disabled = true;
+                if (climate.value === 'cold') climate.value = '';
+                soilNote.textContent = 'ℹ️ Этот тип почвы характерен для южных регионов — холодный климат недоступен';
+            } else {
+                coldOption.disabled = false;
+                soilNote.textContent = soilType === 'chernozem' ? 'ℹ️ Чернозёмы встречаются в разных климатических зонах' : '';
+            }
+            calcBtn.disabled = !soilType || !climate.value;
+        }
+        function calculateRootstock() {
+            const soilType = document.getElementById('soilType').value;
+            const climate = document.getElementById('climate').value;
+            if (!soilType || !climate) { alert('Пожалуйста, выберите тип почвы и климат!'); return; }
+            let recommendations = [], warnings = [];
+            if (climate === 'cold') {
+                recommendations = [
+                    { name: 'Андрос', desc: 'Максимальная морозоустойчивость (до -30°C). Адаптация к резким перепадам температур.' },
+                    { name: '101-14', desc: 'Высокая морозоустойчивость корней (-25°C), раннее вызревание лозы.' },
+                    { name: 'Гравесак', desc: 'Повышает зимостойкость привоя, хорошо адаптирован к прохладному климату.' }
+                ];
+                if (soilType.includes('limestone')) warnings.push('⚠️ 101-14 имеет низкую известкоустойчивость! Проверьте содержание активной извести (<10-15%).');
+                warnings.push('⚠️ При холодном климате обязательна посадка с заглублением и укрытие на зиму!');
+            } else {
+                switch(soilType) {
+                    case 'limestone_15_20':
+                        recommendations = [
+                            { name: 'Феркаль', desc: 'Лидер по устойчивости к активной извести. Высокий аффинитет.' },
+                            { name: '41Б', desc: 'Компактный куст, ускорение созревания. Высокая известкоустойчивость.' },
+                            { name: '1103 Полсен', desc: 'Отличная засухоустойчивость и солевыносливость.' },
+                            { name: 'Рюгжери 140', desc: 'Сильнорослый подвой для каменистых и засушливых условий.' },
+                            { name: 'Кобер 5ББ', desc: 'Универсальный подвой с хорошей совместимостью.' },
+                            { name: 'СО4', desc: 'Раннее плодоношение, оптимальная сила роста.' }
+                        ]; break;
+                    case 'arid':
+                        recommendations = [
+                            { name: '1103 Полсен', desc: 'Отличная засухоустойчивость и солевыносливость. Мощная корневая система.' },
+                            { name: 'Рюгжери 140', desc: 'Сильнорослый подвой. Отличная засухоустойчивость.' }
+                        ]; break;
+                    case 'limestone_30_40':
+                        recommendations = [
+                            { name: 'Феркаль', desc: 'Лидер по устойчивости к активной извести (до 45%). Идеальный выбор.' },
+                            { name: '41Б', desc: 'Высокая известкоустойчивость (до 40%), компактность.' },
+                            { name: 'Рюгжери 140', desc: 'Хорошая адаптация к тяжёлым известковым почвам, сильнорослость.' }
+                        ];
+                        warnings.push('⚠️ При сильно известковой почве (30-40%) критически важна максимальная известкоустойчивость! 1103 Полсен не рекомендуется.'); break;
+                    case 'sandy':
+                        recommendations = [{ name: 'Гравесак', desc: 'Идеален для песчаных почв. Повышает зимостойкость привоя.' }]; break;
+                    case 'saline':
+                        recommendations = [{ name: '1103 Полсен', desc: 'Лучший выбор по солевыносливости и засухоустойчивости.' }];
+                        warnings.push('⚠️ На засоленных почвах обязателен хороший дренаж и контроль полива!'); break;
+                    case 'stony_arid':
+                        recommendations = [
+                            { name: 'Феркаль', desc: 'Высокая известкоустойчивость и аффинитет.' },
+                            { name: '1103 Полсен', desc: 'Мощная корневая система, засухоустойчивость.' },
+                            { name: 'Рюгжери 140', desc: 'Оптимален для каменистых и глубоких почв.' },
+                            { name: '41Б', desc: 'Компактный куст, ускорение созревания. ⚠️ Обязательно обеспечить влагу!' }
+                        ]; break;
+                    case 'chernozem':
+                        recommendations = [
+                            { name: 'Кобер 5ББ', desc: 'Универсальный подвой, хорошая совместимость.' },
+                            { name: 'СО4', desc: 'Раннее плодоношение, сбалансированная сила роста.' },
+                            { name: '41Б', desc: 'Компактность, ускорение созревания.' },
+                            { name: '101-14', desc: 'Раннее вызревание лозы, высокая морозоустойчивость корней.' },
+                            { name: 'Андрос', desc: 'Максимальная морозоустойчивость, адаптация к перепадам температур.' }
+                        ];
+                        warnings.push('⚠️ На богатых чернозёмах избегайте сильнорослых подвоев (1103 Полсен, Рюгжери 140, Феркаль) — риск «жирования» в ущерб вызреванию!'); break;
+                }
+                if (recommendations.some(r => r.name === '41Б') && !soilType.includes('stony_arid')) warnings.push('⚠️ 41Б имеет самую низкую морозоустойчивость корней (-12°C...-14°C). В холодных зонах требуется обязательное укрытие!');
+            }
+            let resultsHTML = '<h2>🏆 Рекомендации:</h2>';
+            recommendations.forEach((rec, index) => {
+                let icon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '✅';
+                resultsHTML += `<div class="result-item"><h3>${icon} ${rec.name}</h3><p>${rec.desc}</p></div>`;
+            });
+            if (warnings.length > 0) {
+                resultsHTML += '<div class="result-item warning">';
+                warnings.forEach(w => resultsHTML += `<p>${w}</p>`);
+                resultsHTML += '</div>';
+            }
+            document.getElementById('results').innerHTML = resultsHTML;
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleClimate();
+            document.getElementById('soilType').addEventListener('change', toggleClimate);
+            document.getElementById('climate').addEventListener('change', function() {
+                document.getElementById('calcBtn').disabled = !document.getElementById('soilType').value || !this.value;
+            });
+        });
+    </script>
+</body>
+</html>
